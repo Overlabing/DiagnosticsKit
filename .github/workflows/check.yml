@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 Overlabing
+#
+# Runs check.sh, the same gate as on a developer's Mac. The repository is public, so the standard runner is free.
+# `xcode-27` is GitHub's standard Xcode 27 image (public preview, arm64); the `xcode-27-xlarge` variant is billed even
+# for public repositories. No secret.
+#
+# CI cannot read the private terms file (it lives outside every repository): the leak scan here uses AppTooling's
+# public patterns only, over the tree and the whole history (hence `fetch-depth: 0`).
+name: check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: xcode-27
+    timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Check
+        run: ./check.sh
