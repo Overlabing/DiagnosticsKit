@@ -6,7 +6,7 @@ import os
 @testable import DiagnosticsKit
 
 /// Records what the kit hands to the system log, which the system log itself cannot show.
-final class RecordingSystemLog: SystemLog {
+final class RecordingSystemLog: DiagnosticSystemLog {
     struct Line: Equatable {
         let category: String
         let type: OSLogType
@@ -22,11 +22,11 @@ final class RecordingSystemLog: SystemLog {
 
     var lines: [Line] { recorded.withLock { $0 } }
 
-    func channel(category: String) -> any SystemLogChannel {
+    func channel(category: String) -> any DiagnosticSystemLogChannel {
         Channel(category: category, log: self)
     }
 
-    private struct Channel: SystemLogChannel {
+    private struct Channel: DiagnosticSystemLogChannel {
         let category: String
         let log: RecordingSystemLog
 

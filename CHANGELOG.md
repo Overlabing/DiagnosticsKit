@@ -15,6 +15,8 @@ First release, extracted from one app so that a second can share it.
   file, 25 MB in all by default), the system log policy and the vocabulary of `summary.txt` are the app's.
 - **OSLogPolicy**: `.publicFieldsAlways` (every line reaches the system log in its public form) or `.onlyWhileEnabled`
   (nothing reaches it, and the message is not even rendered, while the log is off).
+- **DiagnosticSystemLog**: the seam to the system log, so an app can see what its policy lets through, which the
+  system log itself cannot show.
 - **DiagnosticRedactor**: the last net before the file: query strings, addresses, credentials, OAuth tokens and codes,
   SASL payloads and base64 blobs.
 - **DiagnosticArchive** and **DiagnosticSummary**: the zip (`summary.txt`, the log files, `environment.txt`) and the

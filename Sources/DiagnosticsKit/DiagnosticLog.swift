@@ -56,12 +56,12 @@ public final class DiagnosticLog: Sendable {
     }
 
     public let configuration: DiagnosticsConfiguration
-    let systemLog: any SystemLog
+    let systemLog: any DiagnosticSystemLog
     private let state: Mutex<State>
     private let queue: DispatchQueue
     private let flushDelay: DispatchTimeInterval
     /// The writer's own failures: os_log only, never back into this log, and only where the policy lets a line out.
-    private let ownChannel: any SystemLogChannel
+    private let ownChannel: any DiagnosticSystemLogChannel
 
     public convenience init(
         configuration: DiagnosticsConfiguration, flushDelay: DispatchTimeInterval = .seconds(1), isEnabled: Bool = true
@@ -71,9 +71,10 @@ public final class DiagnosticLog: Sendable {
             systemLog: OSLogSystemLog(subsystem: configuration.subsystem))
     }
 
-    init(
-        configuration: DiagnosticsConfiguration, flushDelay: DispatchTimeInterval, isEnabled: Bool,
-        systemLog: any SystemLog
+    /// With the system log behind a seam, to see exactly what a policy lets through.
+    public init(
+        configuration: DiagnosticsConfiguration, flushDelay: DispatchTimeInterval = .seconds(1), isEnabled: Bool = true,
+        systemLog: any DiagnosticSystemLog
     ) {
         self.configuration = configuration
         self.flushDelay = flushDelay

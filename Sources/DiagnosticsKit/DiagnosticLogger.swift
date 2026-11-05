@@ -15,7 +15,7 @@ import os
 public struct DiagnosticLogger: Sendable {
     public let category: String
     public let sink: DiagnosticLog
-    private let channel: any SystemLogChannel
+    private let channel: any DiagnosticSystemLogChannel
 
     public init(category: String, sink: DiagnosticLog) {
         self.category = category

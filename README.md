@@ -15,6 +15,7 @@ policy are passed in as a `DiagnosticsConfiguration`.
 | `DiagnosticLogger` | `os.Logger`'s methods (`debug`, `info`, `notice`, `warning`, `error`, `fault`) over a `DiagnosticLog`; lines of notice and above are also written to the file |
 | `DiagnosticMessage` | A message rendered at the call site into its public form and its full form; `privacy: .private` values never reach the file |
 | `OSLogPolicy` | `.publicFieldsAlways` or `.onlyWhileEnabled` |
+| `DiagnosticSystemLog` | The seam to the system log, so an app can test its policy with a recording implementation (`DiagnosticLog(configuration:flushDelay:isEnabled:systemLog:)`) |
 | `DiagnosticRedactor` | `redact(_:)`: query strings, addresses, credentials, tokens, SASL payloads, base64 blobs |
 | `DiagnosticArchive`, `DiagnosticSummary` | The export's zip and its `summary.txt` |
 | `ErrorLog` | `kind(of:)` and `safeDescription(of:)`: what an error may say in clear and in the file |
