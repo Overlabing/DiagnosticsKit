@@ -103,13 +103,8 @@ public final class DiagnosticLog: Sendable {
 
     public var isEnabled: Bool { state.withLock { $0.isEnabled } }
 
-    /// Whether the loggers on this log may write to the system log right now (see `OSLogPolicy`).
-    var writesToSystemLog: Bool {
-        switch configuration.osLog {
-        case .publicFieldsAlways: true
-        case .onlyWhileEnabled: isEnabled
-        }
-    }
+    /// What the loggers on this log may write to the system log right now (see `OSLogPolicy`).
+    var systemLogAccess: OSLogPolicy.Access { configuration.osLog.access(whileEnabled: isEnabled) }
 
     /// Turns recording on or off. Off: what waits is dropped and nothing more is written; the files stay.
     public func setEnabled(_ enabled: Bool) {
@@ -172,15 +167,16 @@ public final class DiagnosticLog: Sendable {
     }
 
     /// Writes the zip the user sends: every log file and `environment.txt`, after a flush, off the caller's thread.
-    /// `summaryAppendix` joins `summary.txt` (`DiagnosticArchive.write`).
+    /// `summaryAppendix` joins `summary.txt`; with `requireLogs`, no log file throws `DiagnosticArchiveError.noLogs`
+    /// (`DiagnosticArchive.write`).
     public func export(
-        environment: String, summaryAppendix: String = "", to destination: URL, now: Date = Date()
+        environment: String, summaryAppendix: String = "", requireLogs: Bool = false, to destination: URL, now: Date = Date()
     ) async throws {
         try await onQueue { [self] in
             drain()
             try DiagnosticArchive.write(
                 logFiles: resolvedFiles()?.allFiles() ?? [], environment: environment, summaryAppendix: summaryAppendix,
-                to: destination, now: now, configuration: configuration)
+                requireLogs: requireLogs, to: destination, now: now, configuration: configuration)
             reportSize()
         }
     }
@@ -197,6 +193,15 @@ public final class DiagnosticLog: Sendable {
     /// Total size of the log files, in bytes (0 without a folder).
     public func totalBytes() async throws -> Int {
         try await onQueue { [self] in try resolvedFiles()?.totalBytes() ?? 0 }
+    }
+
+    /// Whether there is a log file to export, after what waits has been written (false before `start` or without a
+    /// folder). What an export button can ask before offering to archive nothing.
+    public func hasLogs() async throws -> Bool {
+        try await onQueue { [self] in
+            drain()
+            return try resolvedFiles()?.hasLogs() ?? false
+        }
     }
 
     /// The log files, oldest first (empty before `start` or without a folder).
@@ -230,7 +235,7 @@ public final class DiagnosticLog: Sendable {
 
     /// A failure of the writer itself: said in os_log when the policy lets a line out, never in the file.
     private func logOwnFailure(_ what: String, _ error: any Error) {
-        guard writesToSystemLog else { return }
+        guard systemLogAccess != .nothing else { return }
         ownChannel.write(.error, redacted: "\(what): \(ErrorLog.safeDescription(of: error))", full: nil)
     }
 

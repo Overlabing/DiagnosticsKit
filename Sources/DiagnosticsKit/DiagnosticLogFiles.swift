@@ -129,6 +129,9 @@ public struct DiagnosticLogFiles: Sendable {
     /// Every log file, oldest first (by day, then a day's `.1` before its current file).
     public func allFiles() throws -> [URL] { try logFiles().map(\.url) }
 
+    /// Whether there is at least one log file: what an export has to archive. False in a folder that does not exist yet.
+    public func hasLogs() throws -> Bool { try !logFiles().isEmpty }
+
     struct LogFile {
         let url: URL
         let day: Date

@@ -1,5 +1,11 @@
 import Foundation
 
+/// Why an archive was not written.
+public enum DiagnosticArchiveError: Error, Equatable, Sendable {
+    /// There is no log file to archive (and the caller required one).
+    case noLogs
+}
+
 /// The zip a tester sends: a folder `<name>-diagnostics-<UTC stamp>/` holding `summary.txt` (`DiagnosticSummary`), the
 /// log files and `environment.txt` (what the app says of itself: versions, system, no address). Zipped by the system
 /// (`NSFileCoordinator`, `.forUploading`), no archive code of our own.
@@ -16,11 +22,14 @@ public enum DiagnosticArchive {
 
     /// Writes the zip at `destination`, replacing a file already there only once the new zip is complete: the zip is
     /// read whole, then written atomically (a file the save panel chose: no sibling of ours to rename into place).
-    /// `summaryAppendix` joins `summary.txt` after its story (`DiagnosticSummary.make`).
+    /// `summaryAppendix` joins `summary.txt` after its story (`DiagnosticSummary.make`). With `requireLogs`, no log
+    /// file throws `DiagnosticArchiveError.noLogs` before anything is written; without it, the zip then holds
+    /// `environment.txt` and `summary.txt` alone.
     public static func write(
-        logFiles: [URL], environment: String, summaryAppendix: String = "", to destination: URL, now: Date,
-        configuration: DiagnosticsConfiguration
+        logFiles: [URL], environment: String, summaryAppendix: String = "", requireLogs: Bool = false, to destination: URL,
+        now: Date, configuration: DiagnosticsConfiguration
     ) throws {
+        if requireLogs, logFiles.isEmpty { throw DiagnosticArchiveError.noLogs }
         let manager = FileManager.default
         let staging = manager.temporaryDirectory.appending(path: "\(configuration.fileNamePrefix)-diagnostics-\(UUID().uuidString)")
         defer { try? manager.removeItem(at: staging) }

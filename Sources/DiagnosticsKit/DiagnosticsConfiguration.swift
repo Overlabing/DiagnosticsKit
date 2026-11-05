@@ -8,6 +8,28 @@ public enum OSLogPolicy: Sendable, Equatable {
     /// Nothing reaches the system log while the file log is off, and the line is not even rendered. On, as
     /// `publicFieldsAlways`. The writer's own failures follow the same rule.
     case onlyWhileEnabled
+    /// A message whose interpolations are all public always reaches the system log, whether the file log is on or off.
+    /// A message with at least one private interpolation (`privacy: .private`, or none on a string or an object, which
+    /// os_log treats as private) reaches it only while the log is on, as `publicFieldsAlways` does then. Derived from the
+    /// message itself, with no annotation at the call site. A message cannot be classified without being built, so, off,
+    /// every message at a level the system collects is built once and dropped when private. The writer's own failures
+    /// are never private, so they follow the public messages.
+    case publicMessagesAlways
+
+    /// What the policy lets reach the system log, given whether the file log is on.
+    enum Access: Equatable {
+        case nothing
+        case publicMessagesOnly
+        case everything
+    }
+
+    func access(whileEnabled isEnabled: Bool) -> Access {
+        switch self {
+        case .publicFieldsAlways: .everything
+        case .onlyWhileEnabled: isEnabled ? .everything : .nothing
+        case .publicMessagesAlways: isEnabled ? .everything : .publicMessagesOnly
+        }
+    }
 }
 
 /// Everything one app decides about its diagnostic log. The kit names no app: the subsystem, the file names and the

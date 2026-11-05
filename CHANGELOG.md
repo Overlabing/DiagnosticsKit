@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.1.1
+
+Review fixes of the first adopter and the requests of the second.
+
+### Added
+
+- **`OSLogPolicy.publicMessagesAlways`**: a message whose interpolations are all public always reaches the system log;
+  a message with at least one private interpolation reaches it only while the log is on. Derived from the message's own
+  privacy, with no annotation at the call site. Off, a message is built to be classified and dropped when private.
+- **`DiagnosticLogFiles.hasLogs()`** and **`DiagnosticLog.hasLogs()`**: whether there is a log file to export, for an
+  app that wants to offer the export only then.
+- **`DiagnosticArchiveError.noLogs`**, thrown by `DiagnosticArchive.write` and `DiagnosticLog.export` when
+  `requireLogs: true` and there is no log file. Nothing is written, a file already at the destination stays. The default
+  (`requireLogs: false`) keeps 0.1.0's behavior: a zip with `environment.txt` and `summary.txt` alone.
+- **`DiagnosticEventConvertible`** and **`DiagnosticLogger.record(_:)`**: an app's typed event (category, level,
+  `DiagnosticMessage`) logged in one call, under the event's own category and level, with the privacy of its message
+  and the logger's policy. The message is not built when nothing would use it.
+
+### Changed
+
+- The gate and the CI use AppTooling 0.2.0 (was 0.1.0).
+
+### Fixed
+
+- A test literal changed on extraction (`alice@exemple.fr` in `ErrorLogTests`) is back to its original.
+
+
 ## 0.1.0
 
 First release, extracted from one app so that a second can share it.

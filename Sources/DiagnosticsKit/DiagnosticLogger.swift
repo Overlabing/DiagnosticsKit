@@ -11,7 +11,7 @@ import os
 ///
 /// Debug and info lines go to os_log only and are not even rendered unless the system collects that level. What reaches
 /// os_log at all follows the log's `OSLogPolicy`: with `.onlyWhileEnabled`, a line is not even rendered while the log is
-/// off.
+/// off; with `.publicMessagesAlways`, a line with a private interpolation is dropped while the log is off.
 public struct DiagnosticLogger: Sendable {
     public let category: String
     public let sink: DiagnosticLog
@@ -26,13 +26,11 @@ public struct DiagnosticLogger: Sendable {
     public func trace(_ message: @autoclosure () -> DiagnosticMessage) { debug(message()) }
 
     public func debug(_ message: @autoclosure () -> DiagnosticMessage) {
-        guard sink.writesToSystemLog, channel.isEnabled(.debug) else { return }
-        emit(.debug, message())
+        emitToSystemLogOnly(.debug, message)
     }
 
     public func info(_ message: @autoclosure () -> DiagnosticMessage) {
-        guard sink.writesToSystemLog, channel.isEnabled(.info) else { return }
-        emit(.info, message())
+        emitToSystemLogOnly(.info, message)
     }
 
     public func notice(_ message: @autoclosure () -> DiagnosticMessage) { record(.notice, message) }
@@ -57,13 +55,38 @@ public struct DiagnosticLogger: Sendable {
         }
     }
 
+    /// Records one typed event (`DiagnosticEventConvertible`) under the event's own category and level, as the same
+    /// call on a logger of that category would. The event's message is not built when nothing would use it.
+    public func record(_ event: some DiagnosticEventConvertible) {
+        let logger = event.category == category ? self : DiagnosticLogger(category: event.category, sink: sink)
+        logger.record(event.level) { event.message }
+    }
+
     /// Off with `.onlyWhileEnabled`: the message is never built, nothing is written anywhere.
     private func record(_ level: DiagnosticLevel, _ message: () -> DiagnosticMessage) {
-        let toSystemLog = sink.writesToSystemLog
-        guard toSystemLog || sink.isEnabled else { return }
+        let isEnabled = sink.isEnabled
+        let access = sink.configuration.osLog.access(whileEnabled: isEnabled)
+        guard access != .nothing || isEnabled else { return }
         let message = message()
-        if toSystemLog { emit(level.osLogType, message) }
-        sink.record(DiagnosticEntry(date: Date(), level: level, category: category, message: message.redacted))
+        if allows(access, message) { emit(level.osLogType, message) }
+        if isEnabled {
+            sink.record(DiagnosticEntry(date: Date(), level: level, category: category, message: message.redacted))
+        }
+    }
+
+    private func emitToSystemLogOnly(_ type: OSLogType, _ message: () -> DiagnosticMessage) {
+        let access = sink.systemLogAccess
+        guard access != .nothing, channel.isEnabled(type) else { return }
+        let message = message()
+        if allows(access, message) { emit(type, message) }
+    }
+
+    private func allows(_ access: OSLogPolicy.Access, _ message: DiagnosticMessage) -> Bool {
+        switch access {
+        case .nothing: false
+        case .publicMessagesOnly: !message.hasPrivate
+        case .everything: true
+        }
     }
 
     private func emit(_ type: OSLogType, _ message: DiagnosticMessage) {

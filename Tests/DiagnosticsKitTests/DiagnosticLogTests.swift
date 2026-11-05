@@ -442,11 +442,11 @@ struct ErrorLogTests {
 
     @Test("Type and case in clear, never the address nor the server text")
     func publicKindHasNoValues() {
-        let kind = ErrorLog.kind(of: Sample.recipientRejected(address: "alice@example.com", code: 550, message: "unknown user alice"))
+        let kind = ErrorLog.kind(of: Sample.recipientRejected(address: "alice@exemple.fr", code: 550, message: "unknown user alice"))
         #expect(kind.hasSuffix("Sample.recipientRejected"))
         #expect(!kind.contains("alice") && !kind.contains("550"))
         #expect(ErrorLog.kind(of: Sample.interrupted).hasSuffix("Sample.interrupted"))
-        let ns = NSError(domain: "UNErrorDomain", code: 1, userInfo: [NSLocalizedDescriptionKey: "alice@example.com"])
+        let ns = NSError(domain: "UNErrorDomain", code: 1, userInfo: [NSLocalizedDescriptionKey: "alice@exemple.fr"])
         #expect(ErrorLog.kind(of: ns) == "UNErrorDomain 1")
     }
 }
