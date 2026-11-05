@@ -26,8 +26,11 @@ policy are passed in as a `DiagnosticsConfiguration`.
 ## Using it
 
 ```swift
-.package(url: "https://github.com/Overlabing/DiagnosticsKit", exact: "0.1.1"),
+.package(url: "https://github.com/Overlabing/DiagnosticsKit", exact: "0.1.2"),
 ```
+
+Kits depend on each other by patch range; apps pin exact. DiagnosticsKit accepts any AppSupportKit 0.1.x from 0.1.1
+(`.upToNextMinor(from: "0.1.1")`), and the app's own exact pin of AppSupportKit decides which one is built.
 
 ```swift
 import DiagnosticsKit

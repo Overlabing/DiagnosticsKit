@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+### Changed
+
+- **Kits depend on each other by patch range; apps pin exact.** The dependency on AppSupportKit moves from
+  `exact: "0.1.1"` to `.upToNextMinor(from: "0.1.1")` (0.1.1 up to, not including, 0.2.0). Before, an app that pinned
+  AppSupportKit 0.1.2 could not resolve next to DiagnosticsKit 0.1.1. Now the app's exact pin of AppSupportKit decides
+  the version, inside the kit's range, and a new AppSupportKit patch does not force a DiagnosticsKit release. No API
+  change; DiagnosticsKit uses only `Preferences`, which did not change.
+
 ## 0.1.1
 
 Review fixes of the first adopter and the requests of the second.
